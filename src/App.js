@@ -1,22 +1,33 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import logo from './logo.svg'
 import './App.css';
 
 function App() {
+  const [image, setImage] = useState(logo);
+
+  const handleFileChange = event => {
+    const fileObj = event.target.files && event.target.files[0];
+
+    if (!fileObj) { // TODO: verify that the file is a valid image.
+      return;
+    }
+
+    console.log('fileObj is : ', fileObj);
+
+    event.target.value = null;
+
+    setImage(URL.createObjectURL(fileObj))
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <h1>Image App</h1>
+        <img src={image} className="App-logo" alt="logo" />
+        <input
+          type="file"
+          onChange={handleFileChange}
+        />
       </header>
     </div>
   );
