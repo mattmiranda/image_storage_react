@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import logo from './logo.svg';
-import ReactLoading from 'react-loading';
 import './App.css';
 
 function App() {
   const [image, setImage] = useState(logo);
+  const [compressedImage, setCompressedImage] = useState(null);
   const [file, setFile] = useState();
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +23,7 @@ function App() {
 
     setImage(URL.createObjectURL(fileObj));
     setFile(fileObj);
+    setCompressedImage(null);
   };
 
   const handleUploadClick = () => {
@@ -30,22 +31,43 @@ function App() {
       return;
     }
 
+    const formData = new FormData();
+    formData.append('file', file);
+
     setLoading(true);
-    fetch('https://httpbin.org/post', {
+    fetch('http://localhost:8000', {
       method: 'POST',
-      body: file,
-      // Setting headers manually for single file upload
-      headers: {
-        'content-type': file.type,
-        'content-length': `${file.size}`
-      }
+      body: formData
     })
       .then(res => {
-        console.log('then triggered');
         setLoading(false);
-        return res.json();
+        console.log('Success :' + res.statusText);
+        const reader = res.body.getReader();
+        return new ReadableStream({
+          start(controller) {
+            return pump();
+            function pump() {
+              return reader.read().then(({ done, value }) => {
+                // When no more data needs to be consumed, close the stream
+                if (done) {
+                  controller.close();
+                  return;
+                }
+                // Enqueue the next data chunk into our target stream
+                controller.enqueue(value);
+                return pump();
+              });
+            }
+          }
+        });
       })
-      .then(data => console.log(data))
+      // Create a new response out of the stream
+      .then(stream => new Response(stream))
+      // Create an object URL for the response
+      .then(response => response.blob())
+      .then(blob => URL.createObjectURL(blob))
+      // Update image
+      .then(url => setCompressedImage(url))
       .catch(err => console.error(err));
   };
 
@@ -62,15 +84,16 @@ function App() {
             COMPRESS
           </button>
         </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
-          }}
-        >
+        <div className='Flex-center'>
+          <p>Preview:</p>
           <img src={image} className='App-logo' alt='Uncompressed' />
           {loading && <progress value={null} />}
+          {compressedImage && (
+            <div className='Flex-center'>
+              <p>Compressed:</p>
+              <img src={compressedImage} className='App-logo' alt='Compressed' />
+            </div>
+          )}
         </div>
       </div>
     </div>
