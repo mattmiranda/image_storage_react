@@ -22,3 +22,4 @@ I decided to use create-react-app to create the UI of this app because I'm more 
 - The post request is working correctly! Now I need to handle the response which has the compressed image in the body as a ReadableStream.
 - I'm going to be honest, I've never worked with a ReadableStream before so I used MDN web docs (https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Using_readable_streams) as a reference in order to handle it.
 - As a final touch I'd like for the user to be able to download the compressed image.
+- I also need to add error handling for when the response is not what's expected.

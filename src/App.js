@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
+import { saveAs } from 'file-saver';
 import logo from './logo.svg';
+import rightArrow from './rightarrow.svg';
 import './App.css';
 
 function App() {
   const [image, setImage] = useState(logo);
+  const [inputFile, setInputFile] = useState();
   const [compressedImage, setCompressedImage] = useState(null);
-  const [file, setFile] = useState();
+  const [compressedFile, setCompressedFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleFileChange = event => {
@@ -22,17 +25,18 @@ function App() {
     }
 
     setImage(URL.createObjectURL(fileObj));
-    setFile(fileObj);
+    setInputFile(fileObj);
     setCompressedImage(null);
+    setCompressedFile(null);
   };
 
   const handleUploadClick = () => {
-    if (!file || loading) {
+    if (!inputFile || loading) {
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', inputFile);
 
     setLoading(true);
     fetch('http://localhost:8000', {
@@ -41,6 +45,10 @@ function App() {
     })
       .then(res => {
         setLoading(false);
+        if (!res.ok) {
+          console.log(res);
+          return Promise.reject(res.statusText);
+        }
         console.log('Success :' + res.statusText);
         const reader = res.body.getReader();
         return new ReadableStream({
@@ -65,10 +73,19 @@ function App() {
       .then(stream => new Response(stream))
       // Create an object URL for the response
       .then(response => response.blob())
-      .then(blob => URL.createObjectURL(blob))
+      .then(blob => {
+        setCompressedFile(blob);
+        return URL.createObjectURL(blob);
+      })
       // Update image
       .then(url => setCompressedImage(url))
       .catch(err => console.error(err));
+  };
+
+  const handleDownloadClick = () => {
+    if (compressedFile && inputFile && inputFile.name) {
+      saveAs(compressedFile, inputFile.name);
+    }
   };
 
   return (
@@ -80,20 +97,28 @@ function App() {
         <p>Select an image to compress:</p>
         <div>
           <input type='file' onChange={handleFileChange} />
-          <button className='Button' onClick={handleUploadClick} disabled={loading}>
+          <button
+            className='Button'
+            onClick={handleUploadClick}
+            disabled={loading || compressedImage}
+          >
             COMPRESS
           </button>
+          <button className='Button' onClick={handleDownloadClick} disabled={!compressedFile}>
+            DOWNLOAD
+          </button>
         </div>
-        <div className='Flex-center'>
-          <p>Preview:</p>
-          <img src={image} className='App-logo' alt='Uncompressed' />
-          {loading && <progress value={null} />}
-          {compressedImage && (
-            <div className='Flex-center'>
-              <p>Compressed:</p>
-              <img src={compressedImage} className='App-logo' alt='Compressed' />
-            </div>
-          )}
+        <div className='Flex-row'>
+          <div className='Preview-box'>
+            <p>Preview:</p>
+            <img src={image} className='Image' alt='Uncompressed' />
+            {loading && <progress value={null} />}
+          </div>
+          <img src={rightArrow} className='Arrow' alt='rightarrow' />
+          <div className='Preview-box'>
+            <p>Compressed:</p>
+            {compressedImage && <img src={compressedImage} className='Image' alt='Compressed' />}
+          </div>
         </div>
       </div>
     </div>
