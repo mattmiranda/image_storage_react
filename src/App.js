@@ -11,6 +11,8 @@ function App() {
   const [compressedFile, setCompressedFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const apiUrl = process.env.REACT_APP_API_URL;
+
   const handleFileChange = event => {
     const fileObj = event.target.files && event.target.files[0];
 
@@ -39,7 +41,7 @@ function App() {
     formData.append('file', inputFile);
 
     setLoading(true);
-    fetch('http://localhost:8000', {
+    fetch(apiUrl, {
       method: 'POST',
       body: formData
     })
