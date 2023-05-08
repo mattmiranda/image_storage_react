@@ -40,3 +40,7 @@ Then run:
 ```
 npm start
 ```
+
+## TODO
+
+1. Docker
